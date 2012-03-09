@@ -94,6 +94,7 @@ class Client(object):
                 expiry = Expiry(key, time)
                 cell.expiry = expiry
                 heapq.heappush(self.__expire, expiry)
+        return True
 
     @property
     def db(self):
@@ -127,20 +128,24 @@ class Client(object):
             if cell.expiry:
                 self.__expire.remove(cell.expiry)
 
-    # def add(self, key, value, time=0, min_compress_len=0):
-    #     """Sets the value for a key if it doesn't exist."""
-    #     if not self.get(key) is None:
-    #         return False
-    #     return self.set(key, value, time, min_compress_len)
+    def add(self, key, value, time=0, min_compress_len=0):
+        """Sets the value for a key if it doesn't exist."""
+        if not key in self.__db:
+            return self.set(key, value, time, min_compress_len)
 
-    # def incr(self, key, delta=1):
-    #     """Increments the value for a key."""
-    #     value = self.get(key)
-    #     if value is None:
-    #         return None
-    #     new_value = int(value) + delta
-    #     self.__db[key] = (self.__db[key][0], str(new_value))
-    #     return new_value
+    def replace(self, key, value, time=0, min_compress_len=0):
+        """Sets the value for a key if it already exists."""
+        if key in self.__db:
+            return self.set(key, value, time, min_compress_len)
+
+    def incr(self, key, delta=1):
+        """Increments the value for a key."""
+        value = self.get(key)
+        if value is None:
+            return None
+        new_value = int(value) + delta
+        self.set(key, new_value)
+        return new_value
 
 
 def tests(max_size=32):
@@ -216,7 +221,6 @@ def tests(max_size=32):
     c.set('changing', 'new', 10)
     # adding 'another' should result in 0 being removed not 'changing'
     c.set('another', 'one')
-    print c.db
     assert c.get('changing') == 'new'
     assert c.get(0) is None
     for i in xrange(1, max_size - 1):
@@ -225,5 +229,5 @@ def tests(max_size=32):
 if __name__ == '__main__':
     import cProfile
     p = cProfile.Profile()
-    p.runcall(tests, 10)
+    p.runcall(tests, 128)
     p.print_stats()
