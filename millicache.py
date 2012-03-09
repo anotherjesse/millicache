@@ -167,7 +167,7 @@ def perf(size=128):
         if i % 3 == 0:
             c.set(i % size, i)
         if i % 3 == 1:
-            c.set(i % size, i, (size % 7) - 3)
+            c.set(i % size, i, ((size % 7) - 3) / 49)
         if i % 7 == 0:
             c.get(i % size)
 
