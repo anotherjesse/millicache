@@ -31,15 +31,18 @@ Architecture
 ------------
 
 smallcache maintains 2 datastructures:
+
  * heapq - for tracking when items have expired
  * deque - for tracking least recently used items
 
 LRU:
+
  * new items are placed into the end of the deque
  * when an item is accessed it is moved to the end of the deque
  * to remove the LRU item, remove the first item in the list
 
 Expiration:
+
  * maintain a heap of items sorted by expiration
  * only items that have expiration are kept in heapq
  * item[0] will be the most likely expired object
