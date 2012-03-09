@@ -41,7 +41,7 @@ class Client(object):
         cell = self.__db.get(key)
         if cell:
             if cell.expired:
-                self._delete(cell.key)
+                self._delete(cell)
             else:
                 self.__lru.remove(cell)
                 self.__lru.append(cell)
@@ -83,22 +83,14 @@ class Client(object):
                 del self.__db[cell.key]
                 self.__lru.remove(cell)
             else:
-                cell = self.__lru.popleft()
-                del self.__db[cell.key]
-                if cell._expires:
-                    self.__expire.remove(cell)
+                self._delete(self.__lru[0])
 
-    def _delete(self, key):
-        '''remove a given key from datastore
-
-        removing an item from a list doesn't need to trigger a heapify
-        '''
-        cell = self.__db.get(key)
-        if cell:
-            del self.__db[key]
-            self.__lru.remove(cell)
-            if cell._expires:
-                self.__expire.remove(cell)
+    def _delete(self, cell):
+        '''remove a given cell from datastore'''
+        del self.__db[cell.key]
+        self.__lru.remove(cell)
+        if cell._expires:
+            self.__expire.remove(cell)
 
     def add(self, key, value, time=0, min_compress_len=0):
         """Sets the value for a key if it doesn't exist."""
