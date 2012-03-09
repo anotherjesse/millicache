@@ -1,10 +1,4 @@
 
-# C.ached
-# R.ecently
-# U.sed
-# E.xpirey
-# L.east
-
 import heapq
 import time
 

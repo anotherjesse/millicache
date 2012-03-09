@@ -1,5 +1,6 @@
+import smallcache
+
 import unittest
-import cruel
 
 MAX_SIZE = 128
 
@@ -7,7 +8,7 @@ MAX_SIZE = 128
 class LRUTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.cache = cruel.Client(MAX_SIZE)
+        self.cache = smallcache.Client(MAX_SIZE)
         for i in xrange(MAX_SIZE):
             self.cache.set(i, i)
 
@@ -39,7 +40,7 @@ class LRUTestCase(unittest.TestCase):
 class ExpiryTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.cache = cruel.Client(MAX_SIZE)
+        self.cache = smallcache.Client(MAX_SIZE)
 
     def test_past_expirey_dont_return(self):
         self.cache.set(1, 'past', -1)
