@@ -48,7 +48,25 @@ class Client(object):
 
     def set(self, key, value, time=0, min_compress_len=0):
         """Sets the value for a key."""
-        if key in self.__db:
+        if self._exists(key):
+            return self.replace(key, value, time, min_compress_len)
+        else:
+            return self.add(key, value, time, min_compress_len)
+
+    def add(self, key, value, time=0, min_compress_len=0):
+        """Sets the value for a key if it doesn't exist."""
+        if not self._exists(key):
+            self._prepare_for_insert()
+            cell = Cell(key, value, time)
+            self.__db[key] = cell
+            if time:
+                heapq.heappush(self.__expire, cell)
+            self.__lru.append(cell)
+            return True
+
+    def replace(self, key, value, time=0, min_compress_len=0):
+        """Sets the value for a key if it already exists."""
+        if self._exists(key):
             cell = self.__db[key]
             if not time and cell._expires:
                 self.__expire.remove(cell)
@@ -56,14 +74,7 @@ class Client(object):
             if time:
                 heapq.heapify(self.__expire)
             self._touch(cell)
-        else:
-            self._prepare_for_insert()
-            cell = Cell(key, value, time)
-            self.__db[key] = cell
-            if time:
-                heapq.heappush(self.__expire, cell)
-            self.__lru.append(cell)
-        return True
+            return True
 
     @property
     def db(self):
@@ -83,6 +94,9 @@ class Client(object):
             else:
                 self._delete(self.__lru[0])
 
+    def _exists(self, key):
+        return key in self.__db
+
     def _delete(self, cell):
         '''remove a given cell from datastore'''
         del self.__db[cell.key]
@@ -94,16 +108,6 @@ class Client(object):
         '''move a cell to the end of the list (it was accesed)'''
         self.__lru.remove(cell)
         self.__lru.append(cell)
-
-    def add(self, key, value, time=0, min_compress_len=0):
-        """Sets the value for a key if it doesn't exist."""
-        if not key in self.__db:
-            return self.set(key, value, time, min_compress_len)
-
-    def replace(self, key, value, time=0, min_compress_len=0):
-        """Sets the value for a key if it already exists."""
-        if key in self.__db:
-            return self.set(key, value, time, min_compress_len)
 
     def incr(self, key, delta=1):
         """Increments the value for a key."""
