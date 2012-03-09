@@ -2,8 +2,23 @@
 import heapq
 import time
 
+# NOTE(ja): there are two container classes (Cell & Expiry) because
+# heapq doesn't allow the caller to provided the cmp - it is provided
+# by the objects in the list.  Since expiry and LRU are two different
+# sorts, I had to use two different containers.
+
+# FIXME(ja): maybe I can use heapq for the expiry - which can jump around
+# wildy.  whereas LRU has much simplier access patterns:
+#  * any time you add/touch something, move it to the end of the list
+#  * the LRU object is the first item in the list
+#  * deleting is removing from the list
+# eg, rewrite to use a collections.dequeue for LRU
+# then we can consolidate Cell & Expiry.
+
 
 class Cell(object):
+    '''holds a key, value, and expiry'''
+
     def __init__(self, key, value):
         self.key = key
         self.expiry = None
