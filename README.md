@@ -1,19 +1,24 @@
-smallcache
+millicache
 ==========
 
 An in-memory, in-process, least resently used (LRU) cache with expiration
 for python.
 
+Use case:
+
+ * 1000 items
+ * 1 ms or less for get/set
+
 The goal is to mirror the python-memcache interface - allowing you to use
-smallcache as a drop in replacement for those times you can't use memcache.
+millicache as a drop in replacement for those times you can't use memcache.
 
 Example
 -------
 
-    import smallcache
+    import millicache
 
     # create a cache, maximum of 100 items
-    c = smallcache.Client(100)
+    c = millicache.Client(100)
 
     c.set('dog', 'fred')
     => True
@@ -30,7 +35,7 @@ Example
 Architecture
 ------------
 
-smallcache maintains 2 datastructures:
+millicache maintains 2 datastructures:
 
  * heapq - for tracking when items have expired
  * sorted list - for tracking least recently used items
@@ -47,5 +52,5 @@ Expiration:
  * only items that have expiration are kept in heapq
  * item[0] will be the most likely expired object
 
-If the cache is full (determined by key count), smallcache first tries to 
+If the cache is full (determined by key count), millicache first tries to 
 remove an expired key, if none, it removes the least resently used key.

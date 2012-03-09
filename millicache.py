@@ -102,7 +102,7 @@ class Client(object):
         First try to remove an expired item, otherwise remove
         the least recently used item.'''
         if len(self.__db) >= self.__max_size:
-            print 'need to remove something'
+            # print 'need to remove something'
             if len(self.__timeq) and self.__timeq[0].expired:
                 cell = heapq.heappop(self.__timeq)
                 del self.__db[cell.key]
