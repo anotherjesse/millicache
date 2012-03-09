@@ -1,3 +1,0 @@
-in-memory LRU cache with expiry in python
-
-with a memcache interface - for those times you can't / don't use memcached
