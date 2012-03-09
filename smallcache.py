@@ -43,8 +43,7 @@ class Client(object):
             if cell.expired:
                 self._delete(cell)
             else:
-                self.__lru.remove(cell)
-                self.__lru.append(cell)
+                self._touch(cell)
                 return cell.value
 
     def set(self, key, value, time=0, min_compress_len=0):
@@ -56,8 +55,7 @@ class Client(object):
             cell.update(value, time)
             if time:
                 heapq.heapify(self.__expire)
-            self.__lru.remove(cell)
-            self.__lru.append(cell)
+            self._touch(cell)
         else:
             self._prepare_for_insert()
             cell = Cell(key, value, time)
@@ -91,6 +89,11 @@ class Client(object):
         self.__lru.remove(cell)
         if cell._expires:
             self.__expire.remove(cell)
+
+    def _touch(self, cell):
+        '''move a cell to the end of the list (it was accesed)'''
+        self.__lru.remove(cell)
+        self.__lru.append(cell)
 
     def add(self, key, value, time=0, min_compress_len=0):
         """Sets the value for a key if it doesn't exist."""
