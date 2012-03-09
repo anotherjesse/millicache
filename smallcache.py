@@ -1,64 +1,31 @@
-
+import collections
 import heapq
 import time
-
-# NOTE(ja): there are two container classes (Cell & Expiry) because
-# heapq doesn't allow the caller to provided the cmp - it is provided
-# by the objects in the list.  Since expiry and LRU are two different
-# sorts, I had to use two different containers.
-
-# FIXME(ja): maybe I can use heapq for the expiry - which can jump around
-# wildy.  whereas LRU has much simplier access patterns:
-#  * any time you add/touch something, move it to the end of the list
-#  * the LRU object is the first item in the list
-#  * deleting is removing from the list
-# eg, rewrite to use a collections.dequeue for LRU
-# then we can consolidate Cell & Expiry.
 
 
 class Cell(object):
     '''holds a key, value, and expiry'''
 
-    def __init__(self, key, value):
+    def __init__(self, key, value, timeout=None):
         self.key = key
-        self.expiry = None
-        self.update(value)
+        self.update(value, timeout)
 
     def update(self, value, timeout=None):
-        self.touch()
         self.value = value
-
-    def __cmp__(self, other):
-        return cmp(self.access, other.access)
-
-    def __repr__(self):
-        return "<cached[%s] = %s>" % (self.key, self.value)
-
-    def touch(self):
-        self.access = time.time()
-
-    @property
-    def expired(self):
-        return self.expiry and self.expiry.expired
-
-
-class Expiry(object):
-    def __init__(self, key, timeout):
-        self.key = key
-        self.update(timeout)
-
-    def update(self, timeout=None):
-        self._expires = time.time() + timeout
-
-    @property
-    def expired(self):
-        return time.time() >= self._expires
+        if timeout:
+            self._expires = time.time() + timeout
+        else:
+            self._expires = None
 
     def __cmp__(self, other):
         return cmp(self._expires, other._expires)
 
     def __repr__(self):
-        return "<cached[%s] = %s>" % (self.key, self.timeout)
+        return "<cached[%s] = %s>" % (self.key, self.value)
+
+    @property
+    def expired(self):
+        return self._expires and time.time() >= self._expires
 
 
 class Client(object):
@@ -76,33 +43,28 @@ class Client(object):
             if cell.expired:
                 self._delete(cell.key)
             else:
-                cell.touch()
-                heapq.heapify(self.__lru)
+                self.__lru.remove(cell)
+                self.__lru.append(cell)
                 return cell.value
 
     def set(self, key, value, time=0, min_compress_len=0):
         """Sets the value for a key."""
         if key in self.__db:
             cell = self.__db[key]
-            cell.update(value)
-            heapq.heapify(self.__lru)
+            if not time and cell._expires:
+                self.__expire.remove(cell)
+            cell.update(value, time)
             if time:
-                if cell.expiry:
-                    cell.expiry.update(time)
-                    heapq.heapify(self.__expire)
-                else:
-                    expiry = Expiry(key, time)
-                    cell.expiry = expiry
-                    heapq.heappush(self.__expire, expiry)
+                heapq.heapify(self.__expire)
+            self.__lru.remove(cell)
+            self.__lru.append(cell)
         else:
             self._prepare_for_insert()
-            cell = Cell(key, value)
+            cell = Cell(key, value, time)
             self.__db[key] = cell
-            heapq.heappush(self.__lru, cell)
             if time:
-                expiry = Expiry(key, time)
-                cell.expiry = expiry
-                heapq.heappush(self.__expire, expiry)
+                heapq.heappush(self.__expire, cell)
+            self.__lru.append(cell)
         return True
 
     @property
@@ -111,19 +73,20 @@ class Client(object):
 
     def _init_db(self):
         self.__db = {}
-        self.__lru = []
         self.__expire = []
+        self.__lru = collections.deque()
 
     def _prepare_for_insert(self):
         if len(self.__db) >= self.__max_size:
             if len(self.__expire) and self.__expire[0].expired:
-                expired = heapq.heappop(self.__expire)
-                cell = self.__db.get(expired.key)
-                del self.__db[expired.key]
+                cell = heapq.heappop(self.__expire)
+                del self.__db[cell.key]
                 self.__lru.remove(cell)
             else:
-                cell = heapq.heappop(self.__lru)
+                cell = self.__lru.popleft()
                 del self.__db[cell.key]
+                if cell._expires:
+                    self.__expire.remove(cell)
 
     def _delete(self, key):
         '''remove a given key from datastore
@@ -134,8 +97,8 @@ class Client(object):
         if cell:
             del self.__db[key]
             self.__lru.remove(cell)
-            if cell.expiry:
-                self.__expire.remove(cell.expiry)
+            if cell._expires:
+                self.__expire.remove(cell)
 
     def add(self, key, value, time=0, min_compress_len=0):
         """Sets the value for a key if it doesn't exist."""
