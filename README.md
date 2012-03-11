@@ -17,8 +17,8 @@ Example
 
     import millicache
 
-    # create a cache, maximum of 100 items
-    c = millicache.Client(100)
+    # create a cache, maximum of 1024 items
+    c = millicache.Client(1024)
 
     c.set('dog', 'fred')
     => True
@@ -29,6 +29,7 @@ Example
     # In this example we are specifying a negative value, so it expired
     # 10 seconds ago.
     c.set('dog', 'dead', -10)
+    => True
     c.get('dog')
     => None
 
