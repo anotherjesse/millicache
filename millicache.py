@@ -31,7 +31,7 @@ class Cell(object):
 class Client(object):
     """Replicates a tiny subset of memcached client interface."""
 
-    def __init__(self, max_size=32, *args, **kwargs):
+    def __init__(self, max_size=1024, *args, **kwargs):
         """Ignores the passed in args."""
         self.__max_size = max_size
         self._init_db()
