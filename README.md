@@ -55,3 +55,8 @@ Expiration:
 
 If the cache is full (determined by key count), millicache first tries to 
 remove an expired key, if none, it removes the least resently used key.
+
+License
+-------
+
+MIT
