@@ -1,7 +1,7 @@
 millicache
 ==========
 
-An in-memory, in-process, least resently used (LRU) cache with expiration
+An in-memory, in-process, least recently used (LRU) cache with expiration
 for python.
 
 Use case:
@@ -54,7 +54,7 @@ Expiration:
  * item[0] will be the most likely expired object
 
 If the cache is full (determined by key count), millicache first tries to 
-remove an expired key, if none, it removes the least resently used key.
+remove an expired key, if none, it removes the least recently used key.
 
 License
 -------
